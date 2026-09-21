@@ -2,6 +2,14 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.model_selection import cross_val_score, StratifiedKFold
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
 
 bank = pd.read_csv("bank_data.csv")
 
@@ -16,11 +24,41 @@ x_encoded = pd.get_dummies(x)
 
 train_x, val_x, train_y, val_y = train_test_split(x_encoded, y, test_size=0.2, random_state= 1)
 
+scaler = StandardScaler()
+train_x_scaled = scaler.fit_transform(train_x)
+val_x_scaled = scaler.transform(val_x)
+
+models = []
+models.append(('LogReg', LogisticRegression(max_iter=1000)))
+models.append(('Tree',DecisionTreeClassifier(random_state= 1)))
+models.append(('Forest', RandomForestClassifier(random_state= 1))) 
+models.append(('KNN', KNeighborsClassifier()))
+models.append(('NaiveBayes', GaussianNB()))
+models.append(('SVM', SVC(gamma= 'auto')))
+
+results = []
+names = []
+
+
+for name, model in models:
+    Kfold = StratifiedKFold(n_splits=10, random_state= 1, shuffle= True)
+    cv_scores = cross_val_score(model, train_x_scaled, train_y, cv= Kfold, scoring='accuracy')
+
+    results.append(cv_scores)
+    names.append(name)
+
+    print(f"{name} Average Accuracy: {cv_scores.mean() * 100:.2f}%")
+
+
+plt.boxplot(results, tick_labels= names)
+plt.title('Algorith Comparison')
+plt.savefig('algorithm_camparison.png')
+
 bank_model = RandomForestClassifier(random_state= 1)
 
-bank_model = bank_model.fit(train_x, train_y)
+bank_model = bank_model.fit(train_x_scaled, train_y)
 
-val_prediction = bank_model.predict(val_x)
+val_prediction = bank_model.predict(val_x_scaled)
 
 accuracy = accuracy_score(val_y, val_prediction)
 
@@ -46,7 +84,8 @@ new_customer_encoded = pd.get_dummies(new_customer)
 new_customer_encoded = new_customer_encoded.reindex(columns=x_encoded.columns, fill_value=0)
 
 # 4. Ask the AI to make a decision
-prediction = bank_model.predict(new_customer_encoded)
+new_customer_scaled = scaler.transform(new_customer_encoded)
+prediction = bank_model.predict(new_customer_scaled)
 
 print("\n--- NEW CUSTOMER APPLICATION ---")
 if prediction[0] == 1:
