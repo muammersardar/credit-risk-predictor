@@ -51,8 +51,8 @@ for name, model in models:
 
 
 plt.boxplot(results, tick_labels= names)
-plt.title('Algorith Comparison')
-plt.savefig('algorithm_camparison.png')
+plt.title('Algorithm Comparison')
+plt.savefig('algorithm_comparison.png')
 
 bank_model = RandomForestClassifier(random_state= 1)
 
